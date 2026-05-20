@@ -1,3 +1,5 @@
+English | [한국어](./README.ko.md)
+
 # 8bit Loop Composer
 
 A small open source 8-bit music maker built with React, Vite, and Tone.js.
