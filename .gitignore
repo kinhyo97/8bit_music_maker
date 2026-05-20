@@ -12,3 +12,6 @@ pnpm-debug.log*
 !.env.example
 coverage/
 .vite/
+
+.vercel
+blogSEO.md
