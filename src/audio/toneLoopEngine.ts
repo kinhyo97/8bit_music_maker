@@ -1,8 +1,9 @@
 import * as Tone from "tone";
 import { createDrumKit } from "./drumKit";
-import { chordToNotes, splitChordSymbols } from "../lib/chords";
 import { getLoopSeconds, getTotalVisualSteps, timeToSeconds } from "../lib/time";
-import type { ArpInstrument, LeadInstrument, LoopSpec } from "../types/music";
+import { createArpInstrument, createBassSynth, createChordSynth, createLeadInstrument, createMasterChain } from "./instruments";
+import { buildLoopPlaybackEvents, scheduleChordEvents, type TimedCallbackEvent } from "./loopEvents";
+import type { LoopSpec } from "../types/music";
 
 export type LoopPlayback = {
   start: () => void;
@@ -30,120 +31,6 @@ export const disposeToneGraph = (disposables: ToneDisposables) => {
   disposables.sequence = null;
   disposables.part = null;
   disposables.synths = [];
-};
-
-const createMasterChain = (volume = 0.72) => {
-  const gain = new Tone.Gain(volume).toDestination();
-  const limiter = new Tone.Limiter(-1).connect(gain);
-  return { gain, limiter };
-};
-
-type TriggerInstrument = {
-  nodes: Tone.ToneAudioNode[];
-  trigger: (note: string, duration: string, time: number) => void;
-};
-
-const createPolyInstrument = (oscillatorType: "square" | "sawtooth" | "triangle", volume = 1): TriggerInstrument => {
-  const gain = new Tone.Gain(volume);
-  const synth = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: oscillatorType },
-    envelope: { attack: 0.012, decay: 0.08, sustain: 0.24, release: 0.11 },
-  }).connect(gain);
-
-  return {
-    nodes: [gain, synth],
-    trigger: (note, duration, time) => synth.triggerAttackRelease(note, duration, time),
-  };
-};
-
-const createPluckInstrument = (volume = 0.95): TriggerInstrument => {
-  let voiceIndex = 0;
-  const gain = new Tone.Gain(volume);
-  const filter = new Tone.Filter({
-    frequency: 3400,
-    type: "lowpass",
-    rolloff: -12,
-  }).connect(gain);
-  const voices = Array.from({ length: 10 }, () =>
-    new Tone.PluckSynth({
-      attackNoise: 0.7,
-      dampening: 3600,
-      resonance: 0.88,
-    }).connect(filter),
-  );
-
-  return {
-    nodes: [gain, filter, ...voices],
-    trigger: (note, _duration, time) => {
-      voices[voiceIndex].triggerAttack(note, time);
-      voiceIndex = (voiceIndex + 1) % voices.length;
-    },
-  };
-};
-
-const createLeadInstrument = (instrument: LeadInstrument): TriggerInstrument => {
-  if (instrument === "pluck") {
-    return createPluckInstrument(0.9);
-  }
-
-  return createPolyInstrument(instrument);
-};
-
-const createArpInstrument = (instrument: ArpInstrument): TriggerInstrument => {
-  if (instrument === "pluck") {
-    return createPluckInstrument(0.72);
-  }
-
-  return createPolyInstrument(instrument === "pulse" ? "square" : instrument, 0.82);
-};
-
-const createBassSynth = (oscillatorType: "triangle" | "square") =>
-  new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: oscillatorType },
-    envelope: { attack: 0.014, decay: 0.12, sustain: 0.42, release: 0.16 },
-  });
-
-const createChordSynth = () => {
-  const gain = new Tone.Gain(0.16);
-  const filter = new Tone.Filter({
-    frequency: 1800,
-    type: "lowpass",
-    rolloff: -12,
-  }).connect(gain);
-  const synth = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: "square" },
-    envelope: { attack: 0.018, decay: 0.12, sustain: 0.18, release: 0.18 },
-  }).connect(filter);
-
-  return { gain, filter, synth };
-};
-
-const scheduleChordEvents = (
-  loop: LoopSpec,
-  callback: (time: number, notes: string[], duration: string) => void,
-) => {
-  loop.chords.slice(0, loop.bars).forEach((chordText, chordIndex) => {
-    const symbols = splitChordSymbols(chordText);
-    const duration = symbols.length > 1 ? "2n" : "1m";
-
-    symbols.forEach((symbol, symbolIndex) => {
-      const notes = chordToNotes(symbol, 4);
-
-      if (!notes.length) {
-        return;
-      }
-
-      const eventTime = timeToSeconds(
-        {
-          bar: chordIndex + 1,
-          beat: symbolIndex === 0 ? 1 : 3,
-        },
-        loop.bpm,
-      );
-
-      callback(eventTime, notes, duration);
-    });
-  });
 };
 
 export const scheduleToneLoop = async (
@@ -183,27 +70,15 @@ export const scheduleToneLoop = async (
     ...drums.nodes,
   ];
 
-  const events: [number, (time: number) => void][] = [];
-  scheduleChordEvents(loop, (eventTime, notes, duration) => {
-    events.push([eventTime, (time) => chord.synth.triggerAttackRelease(notes, duration, time)]);
-  });
-  loop.lead.forEach((event) => {
-    events.push([timeToSeconds(event, loop.bpm), (time) => lead.trigger(event.note, event.length, time)]);
-  });
-  loop.bass.forEach((event) => {
-    events.push([timeToSeconds(event, loop.bpm), (time) => bass.triggerAttackRelease(event.note, event.length, time)]);
-  });
-  loop.arp.forEach((event) => {
-    events.push([timeToSeconds(event, loop.bpm), (time) => arp.trigger(event.note, event.length, time)]);
-  });
-  loop.drums.kick.forEach((event) => {
-    events.push([timeToSeconds(event, loop.bpm), (time) => drums.triggerKick(time)]);
-  });
-  loop.drums.snare.forEach((event) => {
-    events.push([timeToSeconds(event, loop.bpm), (time) => drums.triggerSnare(time)]);
-  });
-  loop.drums.hat.forEach((event) => {
-    events.push([timeToSeconds(event, loop.bpm), (time) => drums.triggerHat(time)]);
+  const events: TimedCallbackEvent[] = buildLoopPlaybackEvents({
+    loop,
+    triggerLead: lead.trigger,
+    triggerBass: (note, duration, time) => bass.triggerAttackRelease(note, duration, time),
+    triggerArp: arp.trigger,
+    triggerChord: (notes, duration, time) => chord.synth.triggerAttackRelease(notes, duration, time),
+    triggerKick: drums.triggerKick,
+    triggerSnare: drums.triggerSnare,
+    triggerHat: drums.triggerHat,
   });
 
   disposables.part = new Tone.Part((time, callback) => callback(time), events).start(0);
@@ -218,6 +93,7 @@ export const scheduleToneLoop = async (
   Tone.Transport.start();
 };
 
+// 현재 루프를 실제 오디오 데이터로 미리 렌더링해서 AudioBuffer로 만드는 역할
 export const renderLoopToAudioBuffer = async (loop: LoopSpec) => {
   const loopSeconds = getLoopSeconds(loop.bars, loop.bpm);
   const rendered = await Tone.Offline(async ({ transport }) => {

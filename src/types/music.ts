@@ -1,3 +1,5 @@
+import type { ArpInstrument, BassInstrument, DrumInstrument, LeadInstrument } from "../lib/instrumentRegistry";
+
 export type NoteEvent = {
   bar: number;
   beat: number;
@@ -16,10 +18,6 @@ export type DrumLane = "kick" | "snare" | "hat";
 
 export type PatternLane = "chord" | MelodicLane | DrumLane;
 
-export type LeadInstrument = "square" | "sawtooth" | "triangle" | "pluck";
-export type BassInstrument = "triangle" | "square";
-export type ArpInstrument = "square" | "pulse" | "pluck";
-
 export type LoopSpec = {
   title: string;
   mood: string[];
@@ -33,7 +31,7 @@ export type LoopSpec = {
     lead: LeadInstrument;
     bass: BassInstrument;
     arp: ArpInstrument;
-    drums: "noise";
+    drums: DrumInstrument;
   };
   lead: NoteEvent[];
   bass: NoteEvent[];
