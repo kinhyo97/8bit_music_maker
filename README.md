@@ -1,5 +1,7 @@
 English | [한국어](./README.ko.md)
 
+<img width="1833" height="566" alt="image" src="https://github.com/user-attachments/assets/8684b935-ec12-4303-bbf1-be4647883af5" />
+
 # 8bit Loop Composer
 
 A small open source 8-bit music maker built with React, Vite, and Tone.js.
