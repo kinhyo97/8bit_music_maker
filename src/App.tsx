@@ -8,6 +8,8 @@ import {
 } from "./audio/toneLoopEngine";
 import { ComposerView } from "./components/ComposerView";
 import { ControlPanel } from "./components/ControlPanel";
+import { GameSyncTestRoute } from "./components/GameSyncTestRoute";
+import { GameTestRoute } from "./components/GameTestRoute";
 import { defaultSong, songLibrary, type LibrarySong } from "./data/songLibrary";
 import { downloadBlob } from "./lib/download";
 import { isLoopSpec, normalizeLoopSpec } from "./lib/loopSpecValidation";
@@ -72,6 +74,14 @@ const parseStoredSongs = (): LibrarySong[] => {
 };
 
 function App() {
+  if (typeof window !== "undefined" && (window.location.pathname === "/game/sync-test" || window.location.pathname === "/game/sink-test")) {
+    return <GameSyncTestRoute />;
+  }
+
+  if (typeof window !== "undefined" && window.location.pathname === "/game") {
+    return <GameTestRoute />;
+  }
+
   const [loop, setLoop] = useState<LoopSpec>(defaultSong.loop);
   const [userSongs, setUserSongs] = useState<LibrarySong[]>(() => parseStoredSongs());
   const [isPlaying, setIsPlaying] = useState(false);

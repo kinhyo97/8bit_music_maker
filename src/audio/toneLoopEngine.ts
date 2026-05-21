@@ -23,8 +23,9 @@ export const createEmptyDisposables = (): ToneDisposables => ({
 });
 
 export const disposeToneGraph = (disposables: ToneDisposables) => {
-  Tone.Transport.stop();
-  Tone.Transport.cancel();
+  const transport = Tone.getTransport();
+  transport.stop();
+  transport.cancel();
   disposables.sequence?.dispose();
   disposables.part?.dispose();
   disposables.synths.forEach((node) => node.dispose());
@@ -43,10 +44,14 @@ export const scheduleToneLoop = async (
   disposeToneGraph(disposables);
 
   const loopSeconds = getLoopSeconds(loop.bars, loop.bpm);
-  Tone.Transport.bpm.value = loop.bpm;
-  Tone.Transport.loop = loopEnabled;
-  Tone.Transport.loopStart = 0;
-  Tone.Transport.loopEnd = loopSeconds;
+  // 전역 재생 타이머 객체
+  const transport = Tone.getTransport();
+  // 오디오 타이밍에 맞춰 UI 업데이트를 안전하게 맞추는 객체
+  const draw = Tone.getDraw();
+  transport.bpm.value = loop.bpm;
+  transport.loop = loopEnabled;
+  transport.loopStart = 0;
+  transport.loopEnd = loopSeconds;
 
   const { gain, limiter } = createMasterChain();
   const lead = createLeadInstrument(loop.instruments.lead);
@@ -81,16 +86,19 @@ export const scheduleToneLoop = async (
     triggerHat: drums.triggerHat,
   });
 
+  // 소리가 날 이벤트를 Transport에 등록
   disposables.part = new Tone.Part((time, callback) => callback(time), events).start(0);
+  // 16n 간격으로 step 번호를 콜백에 넘겨줌
   disposables.sequence = new Tone.Sequence(
     (time, step) => {
-      Tone.Draw.schedule(() => onStep(step), time);
+      draw.schedule(() => onStep(step), time);
     },
     Array.from({ length: getTotalVisualSteps(loop.bars) }, (_, index) => index),
     "16n",
   ).start(0);
 
-  Tone.Transport.start();
+  // Tone.part 및 Tone.Sequence에 등록해둔 이벤트를 돌리는 스위치
+  transport.start();
 };
 
 // 현재 루프를 실제 오디오 데이터로 미리 렌더링해서 AudioBuffer로 만드는 역할

@@ -491,3 +491,124 @@ textarea {
     padding: 12px;
   }
 }
+
+.game-route-shell {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgba(246, 189, 96, 0.12), transparent 24%),
+    linear-gradient(180deg, #13161a 0%, #0d1013 100%);
+  padding: 20px;
+}
+
+.game-route-panel {
+  border: 1px solid rgba(246, 241, 222, 0.12);
+  background: rgba(16, 19, 22, 0.86);
+  border-radius: 14px;
+  margin: 0 auto;
+  max-width: 980px;
+  padding: 20px;
+}
+
+.game-route-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.game-route-eyebrow {
+  color: #9fb7ad;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.game-route-header h1 {
+  font-size: 28px;
+  margin: 0 0 8px;
+}
+
+.game-route-status {
+  color: #b8ad96;
+  margin: 0;
+}
+
+.game-route-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.game-route-link {
+  text-decoration: none;
+}
+
+.game-route-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.game-route-meta span {
+  background: #181d21;
+  border: 1px solid rgba(246, 241, 222, 0.08);
+  border-radius: 999px;
+  color: #f6f1de;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 8px 10px;
+}
+
+.game-sync-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.game-playfield {
+  background:
+    linear-gradient(180deg, rgba(147, 197, 253, 0.08), transparent 24%),
+    linear-gradient(180deg, #11151a 0%, #0a0c0f 100%);
+  border: 1px solid rgba(246, 241, 222, 0.12);
+  border-radius: 12px;
+  height: 640px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  position: relative;
+}
+
+.phaser-game-host {
+  height: 100%;
+  width: 100%;
+}
+
+.phaser-game-host canvas {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.game-feedback-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+  min-height: 34px;
+}
+
+.game-help {
+  color: #b8ad96;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.game-route-error {
+  color: #ff9fad;
+  margin-bottom: 16px;
+}

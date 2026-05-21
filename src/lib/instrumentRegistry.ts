@@ -1,3 +1,7 @@
+/**
+ *  악기 형태 타입
+ */
+
 type PolyOscillatorType = "square" | "sawtooth" | "triangle";
 
 type TriggerInstrumentConfig =
