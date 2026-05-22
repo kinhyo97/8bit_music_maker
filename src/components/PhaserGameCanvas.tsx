@@ -1,27 +1,28 @@
 import { useEffect, useRef } from "react";
 import type Phaser from "phaser";
-import type { PlayEngine } from "../game";
+import type { EngineRunner } from "../game/EngineRunner";
+import type { GameModeId } from "../game/modes/gameModeConfig";
 import type { PlaySessionState } from "../game/types/session";
 import { createGame } from "../game/phaser/createGame";
 
 type PhaserGameCanvasProps = {
-  engine: PlayEngine | null;
+  runner: EngineRunner | null;
   onStateChange?: (state: PlaySessionState) => void;
-  mode?: "default" | "sync-test";
+  mode?: GameModeId;
 };
 
-export const PhaserGameCanvas = ({ engine, onStateChange, mode }: PhaserGameCanvasProps) => {
+export const PhaserGameCanvas = ({ runner, onStateChange, mode }: PhaserGameCanvasProps) => {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
 
   useEffect(() => {
-    if (!engine || !hostRef.current) {
+    if (!runner || !hostRef.current) {
       return;
     }
 
     gameRef.current = createGame({
       container: hostRef.current,
-      engine,
+      runner,
       onStateChange,
       mode,
     });
@@ -30,7 +31,7 @@ export const PhaserGameCanvas = ({ engine, onStateChange, mode }: PhaserGameCanv
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };
-  }, [engine, onStateChange, mode]);
+  }, [runner, onStateChange, mode]);
 
   return <div className="phaser-game-host" ref={hostRef} />;
 };

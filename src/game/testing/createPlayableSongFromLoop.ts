@@ -1,4 +1,5 @@
 import { renderLoopToAudioBuffer } from "../../audio/toneLoopEngine";
+import { prependAudioBufferSilence } from "../audio/prependAudioBufferSilence";
 import type { LoopSpec } from "../../types/music";
 import { timingConfig } from "../config/timingConfig";
 import type { PlayableSong } from "../types/playableSong";
@@ -26,14 +27,16 @@ export const createPlayableSongFromLoop = async (
     throw new Error("기존 루프를 게임용 오디오 버퍼로 렌더링하지 못했습니다.");
   }
 
+  const audioBufferWithLeadIn = prependAudioBufferSilence(renderedBuffer, timingConfig.leadInTime);
+
   return {
     id: songId,
     title: loop.title,
     chart,
     audio: {
       kind: "buffer",
-      loadBuffer: async () => renderedBuffer,
-      durationSeconds: renderedBuffer.duration,
+      loadBuffer: async () => audioBufferWithLeadIn,
+      durationSeconds: audioBufferWithLeadIn.duration,
     },
     metadata: {
       origin: "generated-loop",
